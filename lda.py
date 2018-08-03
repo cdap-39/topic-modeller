@@ -87,6 +87,9 @@ if __name__ == '__main__':
     # Create Dictionary
     id2word = corpora.Dictionary(data_lemmatized)
 
+    # save dictionary
+    id2word.save('id2')
+
     # Create Corpus
     texts = data_lemmatized
 
@@ -100,43 +103,17 @@ if __name__ == '__main__':
     ldamallet = gensim.models.wrappers.LdaMallet(mallet_path, corpus=corpus, num_topics=20, id2word=id2word)
 
 
-    def compute_coherence_values(dictionary, corpus, texts, limit, start=2, step=3):
-        """
-        Compute c_v coherence for various number of topics
-
-        Parameters:
-        ----------
-        dictionary : Gensim dictionary
-        corpus : Gensim corpus
-        texts : List of input texts
-        limit : Max num of topics
-
-        Returns:
-        -------
-        model_list : List of LDA topic models
-        coherence_values : Coherence values corresponding to the LDA model with respective number of topics
-        """
-        coherence_values = []
-        model_list = []
-        for num_topics in range(start, limit, step):
-            model = gensim.models.wrappers.LdaMallet(mallet_path, corpus=corpus, num_topics=num_topics, id2word=id2word)
-            model_list.append(model)
-            coherencemodel = CoherenceModel(model=model, texts=texts, dictionary=dictionary, coherence='c_v')
-            coherence_values.append(coherencemodel.get_coherence())
-
-        return model_list, coherence_values
-
-
-    model_list, coherence_values = compute_coherence_values(dictionary=id2word, corpus=corpus, texts=data_lemmatized,
-                                                            start=2, limit=40, step=6)
-
     # Select the model and print the topics
-    optimal_model = model_list[3]
+    optimal_model = gensim.models.wrappers.LdaMallet(mallet_path, corpus=corpus, num_topics=20, id2word=id2word)
     model_topics = optimal_model.show_topics(formatted=False)
+
+    # save model to disk
+    optimal_model.save('ldamodel')
 
     from gensim import similarities
 
     index = similarities.MatrixSimilarity(optimal_model[corpus])
+    index.save('index')
 
     query = "Police say that they have already identified some of the suspects who were involved in killing a leopard in Ambalkulam in Kilinochchi. The suspects have been identified by examining video footage. A senior officer at the Kilinochchi Police stated that investigations are underway to apprehend four such identified suspects. Kilinochchi Magistrate Court yesterday ordered police to examine video footage and arrest the suspects who were involved in clubbing the leopard to death."
     vec_bow = id2word.doc2bow(query.lower().split())
@@ -147,4 +124,4 @@ if __name__ == '__main__':
     sims = sorted(enumerate(sims), key=lambda item: -item[1])
     print(sims)
 
-    print(df['data'][25])
+    print(df['data'][19])
